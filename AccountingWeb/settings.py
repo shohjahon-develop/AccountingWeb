@@ -88,10 +88,10 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with'
 ]
 
-# CSRF_TRUSTED_ORIGINS = [
-#     "http://localhost:5173",
-#     # "https://yourfrontend.com"
-# ]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    # "https://yourfrontend.com"
+]
 
 
 ROOT_URLCONF = 'AccountingWeb.urls'

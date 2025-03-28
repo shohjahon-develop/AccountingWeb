@@ -102,6 +102,7 @@ class ReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Report
         fields = ['id', 'client', 'accountant', 'report_types', 'status', 'total_price', 'created_at']
+        extra_kwargs = {'status': {'write_only': True}}
 
 
 

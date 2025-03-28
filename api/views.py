@@ -156,6 +156,16 @@ class ReportViewSet(viewsets.ModelViewSet):
             "total_earnings": total_earnings
         })
 
+    @action(detail=True, methods=['PATCH'], permission_classes=[permissions.IsAuthenticated])
+    def update_status(self, request, pk=None):
+        """Hisobotning statusini yangilash."""
+        report = self.get_object()
+        serializer = ReportSerializer(report, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ReportCommentViewSet(viewsets.ModelViewSet):
     queryset = ReportComment.objects.all()
