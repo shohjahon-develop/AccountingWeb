@@ -121,7 +121,55 @@ class ReportTypeViewSet(viewsets.ModelViewSet):
 class AccountantViewSet(viewsets.ModelViewSet):
     queryset = Accountant.objects.all()
     serializer_class = AccountantSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAdminUser]  # Faqat adminlar ruxsatga ega
+
+    def get_queryset(self):
+        """Filterlash uchun."""
+        queryset = Accountant.objects.all()
+        user_id = self.request.query_params.get('user_id', None)
+        if user_id is not None:
+            queryset = queryset.filter(user_id=user_id)
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        """Yangi buxgalter yaratish."""
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def retrieve(self, request, pk=None):
+        """Buxgalterni ID bo'yicha olish."""
+        try:
+            accountant = Accountant.objects.get(pk=pk)
+            serializer = self.get_serializer(accountant)
+            return Response(serializer.data)
+        except Accountant.DoesNotExist:
+            return Response({"error": "Bunday buxgalter topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+    def update(self, request, pk=None):
+        """Buxgalterni yangilash."""
+        try:
+            accountant = Accountant.objects.get(pk=pk)
+        except Accountant.DoesNotExist:
+            return Response({"error": "Bunday buxgalter topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(accountant, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, pk=None):
+        """Buxgalterni o'chirish."""
+        try:
+            accountant = Accountant.objects.get(pk=pk)
+        except Accountant.DoesNotExist:
+            return Response({"error": "Bunday buxgalter topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+        accountant.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class ReportViewSet(viewsets.ModelViewSet):
     queryset = Report.objects.all()

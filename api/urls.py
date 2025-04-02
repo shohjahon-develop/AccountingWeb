@@ -4,7 +4,7 @@ from .views import (
     UserViewSet, SignupView, LoginView, UserProfileView, UserProfileUpdateView,
     PasswordResetRequestView, PasswordResetConfirmView, ReportTypeViewSet,
     AccountantViewSet, ReportViewSet, ReportCommentViewSet, MessageViewSet,
-    PaymentCardViewSet
+    PaymentCardViewSet, UserAdminViewSet
 )
 
 router = DefaultRouter()
@@ -15,6 +15,7 @@ router.register(r'reports', ReportViewSet)
 router.register(r'report-comments', ReportCommentViewSet)
 router.register(r'messages', MessageViewSet)
 router.register(r'payment-cards', PaymentCardViewSet)
+router.register(r'admin-users', UserAdminViewSet, basename='admin-users')
 
 urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),

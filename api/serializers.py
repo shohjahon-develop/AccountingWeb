@@ -86,14 +86,19 @@ class ReportTypeSerializer(serializers.ModelSerializer):
         model = ReportType
         fields = '__all__'
 
+
 class AccountantSerializer(serializers.ModelSerializer):
-    full_name = serializers.CharField(source='user.full_name', read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
+    user = UserSerializer(read_only=True)  # UserSerializer bilan bog'lash
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        write_only=True,
+        source='user'
+    )
     fee = serializers.DecimalField(max_digits=10, decimal_places=2)  # fee - buxgalterning narxi
 
     class Meta:
         model = Accountant
-        fields = ['id', 'full_name', 'email', 'experience', 'specialty', 'certifications', 'fee']
+        fields = ['id', 'user', 'user_id', 'experience', 'specialty', 'certifications', 'fee']
 
 
 class ReportSerializer(serializers.ModelSerializer):
