@@ -113,12 +113,12 @@ class PasswordResetConfirmView(generics.GenericAPIView):
 
 
 
-class ReportTypeViewSet(viewsets.ReadOnlyModelViewSet):
+class ReportTypeViewSet(viewsets.ModelViewSet):
     queryset = ReportType.objects.all()
     serializer_class = ReportTypeSerializer
     permission_classes = [permissions.AllowAny]
 
-class AccountantViewSet(viewsets.ReadOnlyModelViewSet):
+class AccountantViewSet(viewsets.ModelViewSet):
     queryset = Accountant.objects.all()
     serializer_class = AccountantSerializer
     permission_classes = [permissions.AllowAny]
