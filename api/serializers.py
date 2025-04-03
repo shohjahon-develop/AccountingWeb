@@ -3,6 +3,7 @@ from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from api.models import *
 
@@ -31,6 +32,20 @@ class SignupSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data)
 
 
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Add custom claims
+        token['role'] = user.role
+
+        return token
+
+class LoginResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+    tokens = CustomTokenObtainPairSerializer()
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -80,12 +95,10 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         return attrs
 
 
-
 class ReportTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReportType
         fields = '__all__'
-
 
 class AccountantSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)  # UserSerializer bilan bog'lash
@@ -100,9 +113,10 @@ class AccountantSerializer(serializers.ModelSerializer):
         model = Accountant
         fields = ['id', 'user', 'user_id', 'experience', 'specialty', 'certifications', 'fee']
 
-
 class ReportSerializer(serializers.ModelSerializer):
-    report_types = serializers.StringRelatedField(many=True, read_only=True)  # To‘g‘ri ManyToManyField
+    report_types = ReportTypeSerializer(many=True, read_only=True)  # O'zgartirildi
+    accountant = AccountantSerializer(read_only=True)  # O'zgartirildi
+    client = UserSerializer(read_only=True)
 
     class Meta:
         model = Report

@@ -24,16 +24,31 @@ class SignupView(generics.CreateAPIView):
 
 
 class LoginView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
-        if response.status_code == 200:
-            return Response({
-                "message": "Tizimga muvaffaqiyatli kirdingiz!",
-                "tokens": response.data
-            }, status=status.HTTP_200_OK)
-        return response
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = serializer.user
+        token_serializer = CustomTokenObtainPairSerializer.get_token(user)
+        refresh_token = str(token_serializer)
+        access_token = str(token_serializer.access_token)
+        role = user.role
+
+        return Response({
+            "message": "Tizimga muvaffaqiyatli kirdingiz!",
+            "tokens": {
+                "refresh": refresh_token,
+                "access": access_token,
+                "role": role
+            }
+        }, status=status.HTTP_200_OK)
 
 
 
@@ -183,7 +198,9 @@ class ReportViewSet(viewsets.ModelViewSet):
         return Report.objects.filter(client=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(client=self.request.user)
+        report_types_data = self.request.data.getlist('report_types')  # Ro'yxat sifatida qabul qilish
+        report = serializer.save(client=self.request.user)
+        report.report_types.set(report_types_data)  # report_types ni o'rnatish
 
     @action(detail=False, methods=['GET'], permission_classes=[permissions.IsAuthenticated])
     def accountant_statistics(self, request):
@@ -215,6 +232,8 @@ class ReportViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+
 class ReportCommentViewSet(viewsets.ModelViewSet):
     queryset = ReportComment.objects.all()
     serializer_class = ReportCommentSerializer
@@ -237,7 +256,6 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(sender=self.request.user)
-
 
 class PaymentCardViewSet(viewsets.ModelViewSet):
     queryset = PaymentCard.objects.all()
