@@ -39,5 +39,5 @@ class ReportTypeAdmin(admin.ModelAdmin):
 
 @admin.register(Accountant)
 class AccountantAdmin(admin.ModelAdmin):
-    list_display = ('user', 'experience', 'specialty', 'fee')
-    search_fields = ('user__full_name', 'specialty')
+    list_display = ('user',  'certifications', 'fee')
+

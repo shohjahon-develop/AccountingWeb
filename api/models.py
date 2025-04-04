@@ -19,7 +19,6 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-
 class User(AbstractBaseUser, PermissionsMixin):
     ROLE_CHOICES = [
         ('mijoz', 'Mijoz'),
@@ -38,6 +37,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Buxgalterlar uchun
     experience = models.IntegerField(blank=True, null=True)
     specialty = models.CharField(max_length=100, blank=True, null=True)
+    address = models.CharField(max_length=255, blank=True, null=True)  # Yangi: manzil
+    skills = models.TextField(blank=True, null=True)  # Yangi: ko'nikmalar
+    languages = models.CharField(max_length=255, blank=True, null=True)  # Yangi: tillar
+    bio = models.TextField(blank=True, null=True)  # Yangi: o'zi haqida
 
     # Foydalanuvchi roli
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='mijoz')
@@ -53,6 +56,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f"{self.full_name} - {self.role}"
 
+class Accountant(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    certifications = models.TextField(blank=True, null=True)  # Sertifikatlar shu yerda qoladi
+    fee = models.PositiveIntegerField()
+
+    def __str__(self):
+        return self.user.full_name
+
 
 
 class ReportType(models.Model):
@@ -63,15 +74,7 @@ class ReportType(models.Model):
     def __str__(self):
         return self.name
 
-class Accountant(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    experience = models.IntegerField()  # yillar
-    specialty = models.CharField(max_length=255)  # ixtisoslik
-    certifications = models.TextField(blank=True, null=True)
-    fee = models.PositiveIntegerField()
 
-    def __str__(self):
-        return self.user.full_name
 
 class Report(models.Model):
     STATUS_CHOICES = [

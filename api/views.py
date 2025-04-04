@@ -149,10 +149,9 @@ class AccountantViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Yangi buxgalter yaratish."""
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)  # This will raise a 400 error if validation fails
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def retrieve(self, request, pk=None):
         """Buxgalterni ID bo'yicha olish."""
@@ -275,7 +274,7 @@ class PaymentCardViewSet(viewsets.ModelViewSet):
 class UserAdminViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAdminUser]
+    # permission_classes = [permissions.IsAdminUser]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -294,8 +293,12 @@ class UserAdminViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         user = self.get_object()
-        user.delete()
-        return Response({"message": "Foydalanuvchi o‘chirildi"}, status=status.HTTP_204_NO_CONTENT)
+        try:
+            user.delete()
+            return Response({"message": "Foydalanuvchi o‘chirildi"}, status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response({"error": f"Foydalanuvchini o'chirishda xatolik: {str(e)}"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 

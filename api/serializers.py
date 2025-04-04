@@ -12,24 +12,41 @@ User = get_user_model()
 class SignupSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['full_name', 'email', 'phone_number', 'password', 'role',
-                  'company_name', 'stir', 'experience', 'specialty']
+        fields = [
+            'full_name', 'email', 'phone_number', 'password', 'role',
+            'company_name', 'stir', 'experience', 'specialty', 'address',
+            'skills', 'languages', 'bio'
+        ]
         extra_kwargs = {'password': {'write_only': True}}
 
     def validate(self, data):
         role = data.get('role', 'mijoz')
         if role == 'mijoz':
-            # Mijozlar faqat company_name va stir kiritishi mumkin
-            data.pop('experience', None)
-            data.pop('specialty', None)
+            # Mijoz uchun faqat kerakli maydonlar
+            required_fields = ['company_name', 'stir']
+            for field in required_fields:
+                if not data.get(field):
+                    raise serializers.ValidationError({field: f"{field} mijoz uchun majburiy."})
+            # Buxgalter maydonlarini olib tashlash
+            for field in ['experience', 'specialty', 'address', 'skills', 'languages', 'bio']:
+                data.pop(field, None)
         elif role == 'buxgalter':
-            # Buxgalterlar faqat experience va specialty kiritishi mumkin
-            data.pop('company_name', None)
-            data.pop('stir', None)
+            # Buxgalter uchun faqat kerakli maydonlar
+            required_fields = ['experience', 'specialty', 'address', 'skills', 'languages', 'bio']
+            for field in required_fields:
+                if not data.get(field):
+                    raise serializers.ValidationError({field: f"{field} buxgalter uchun majburiy."})
+            # Mijoz maydonlarini olib tashlash
+            for field in ['company_name', 'stir']:
+                data.pop(field, None)
         return data
 
     def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
+        user = User.objects.create_user(**validated_data)
+        if user.role == 'buxgalter':
+            # Accountant obyektini yaratish
+            Accountant.objects.create(user=user, certifications=self.context['request'].data.get('certifications', ''))
+        return user
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -111,7 +128,16 @@ class AccountantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Accountant
-        fields = ['id', 'user', 'user_id', 'experience', 'specialty', 'certifications', 'fee']
+        fields = ['id', 'user', 'user_id', 'certifications', 'fee']
+
+    def validate_user_id(self, value):
+        # Check if the user already has an associated Accountant
+        if Accountant.objects.filter(user=value).exists():
+            raise serializers.ValidationError("Bu foydalanuvchi allaqachon buxgalter sifatida ro'yxatdan o'tgan.")
+        # Check if the user's role is 'buxgalter'
+        if value.role != 'buxgalter':
+            raise serializers.ValidationError("Faqat 'buxgalter' roli bo'lgan foydalanuvchilar Accountant sifatida qo'shilishi mumkin.")
+        return value
 
 class ReportSerializer(serializers.ModelSerializer):
     report_types = ReportTypeSerializer(many=True, read_only=True)  # O'zgartirildi
