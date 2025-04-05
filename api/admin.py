@@ -41,3 +41,7 @@ class ReportTypeAdmin(admin.ModelAdmin):
 class AccountantAdmin(admin.ModelAdmin):
     list_display = ('user',  'certifications', 'fee')
 
+@admin.register(AboutUs)
+class AboutUsAdmin(admin.ModelAdmin):
+    list_display = ('title',)
+    search_fields = ('title', 'text')

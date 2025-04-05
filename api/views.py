@@ -78,9 +78,37 @@ class UserProfileUpdateView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserUpdateSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_object(self):
         return self.request.user
+
+
+
+class PasswordChangeView(generics.GenericAPIView):
+    serializer_class = PasswordChangeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        new_password = serializer.validated_data['new_password']
+        user.set_password(new_password)
+        user.save()
+
+        return Response({"detail": "Parol muvaffaqiyatli o‘zgartirildi."}, status=status.HTTP_200_OK)
+
+
+class AboutUsViewSet(viewsets.ModelViewSet):
+    queryset = AboutUs.objects.all()
+    serializer_class = AboutUsSerializer
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:  # GET so'rovlar uchun
+            return [permissions.AllowAny()]
+        return [permissions.IsAdminUser()]  # POST, PUT, DELETE uchun admin kerak
 
 # Parolni qayta tiklash /////////////////////////////////////////////////////////////////
 

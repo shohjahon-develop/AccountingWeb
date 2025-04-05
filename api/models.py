@@ -29,6 +29,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=15, unique=True)
     full_name = models.CharField(max_length=255)
+    img = models.ImageField(upload_to='user_images/', blank=True, null=True)
 
     # Mijozlar uchun
     company_name = models.CharField(max_length=255, blank=True, null=True)
@@ -138,7 +139,13 @@ class PaymentCard(models.Model):
         return f"{self.bank_name} - {self.card_number[-4:]}"
 
 
+class AboutUs(models.Model):
+    img = models.ImageField(upload_to='aboutus/', blank=True, null=True)
+    title = models.CharField(max_length=255)
+    text = models.TextField()
 
+    def __str__(self):
+        return self.title
 
 
 

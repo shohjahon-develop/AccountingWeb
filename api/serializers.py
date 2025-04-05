@@ -69,18 +69,19 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'full_name', 'email', 'phone_number', 'role',
-                  'company_name', 'stir', 'experience', 'specialty']
+                  'company_name', 'stir', 'experience', 'specialty','img']
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['full_name', 'phone_number', 'company_name', 'stir', 'experience', 'specialty']
+        fields = ['full_name', 'phone_number', 'company_name', 'stir', 'experience', 'specialty','img']
         extra_kwargs = {
             'experience': {'required': False},
             'specialty': {'required': False},
             'company_name': {'required': False},
             'stir': {'required': False},
+            'img': {'required': False},
         }
 
 
@@ -91,6 +92,12 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         if not User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Bunday email ro'yxatdan o'tmagan.")
         return value
+
+
+class AboutUsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AboutUs
+        fields = ['id', 'img', 'title', 'text']
 
 # 2️⃣ Kodni tekshirish
 class PasswordResetConfirmSerializer(serializers.Serializer):
@@ -181,7 +188,15 @@ class PaymentCardSerializer(serializers.ModelSerializer):
 
 
 
+class PasswordChangeSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True, min_length=6)
+    new_password = serializers.CharField(write_only=True, min_length=6)
 
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Joriy parol noto‘g‘ri.")
+        return value
 
 
 
