@@ -29,20 +29,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=15, unique=True)
     full_name = models.CharField(max_length=255)
-    img = models.ImageField(upload_to='user_images/', blank=True, null=True)
+    img = models.ImageField(upload_to='user_images/', blank=True, null=True)  # Oldingi o‘zgarishdan qolgan
 
     # Mijozlar uchun
     company_name = models.CharField(max_length=255, blank=True, null=True)
     stir = models.CharField(max_length=20, blank=True, null=True)
 
-    # Buxgalterlar uchun
-    experience = models.IntegerField(blank=True, null=True)
-    specialty = models.CharField(max_length=100, blank=True, null=True)
-    address = models.CharField(max_length=255, blank=True, null=True)  # Yangi: manzil
-    skills = models.TextField(blank=True, null=True)  # Yangi: ko'nikmalar
-    languages = models.CharField(max_length=255, blank=True, null=True)  # Yangi: tillar
-    bio = models.TextField(blank=True, null=True)  # Yangi: o'zi haqida
-
+    # Buxgalterga tegishli maydonlar olib tashlanadi
+    # experience, specialty, address, skills, languages, bio olib tashlanadi
 
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='mijoz')
 
@@ -59,8 +53,14 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Accountant(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    certifications = models.TextField(blank=True, null=True)  # Sertifikatlar shu yerda qoladi
+    certifications = models.TextField(blank=True, null=True)
     fee = models.PositiveIntegerField()
+    experience = models.IntegerField(blank=True, null=True)  # Yangi
+    specialty = models.CharField(max_length=100, blank=True, null=True)  # Yangi
+    address = models.CharField(max_length=255, blank=True, null=True)  # Yangi
+    skills = models.TextField(blank=True, null=True)  # Yangi
+    languages = models.CharField(max_length=255, blank=True, null=True)  # Yangi
+    bio = models.TextField(blank=True, null=True)  # Yangi
 
     def __str__(self):
         return self.user.full_name

@@ -39,7 +39,7 @@ class ReportTypeAdmin(admin.ModelAdmin):
 
 @admin.register(Accountant)
 class AccountantAdmin(admin.ModelAdmin):
-    list_display = ('user',  'certifications', 'fee')
+    list_display = ('user', 'experience', 'specialty', 'fee')
 
 @admin.register(AboutUs)
 class AboutUsAdmin(admin.ModelAdmin):

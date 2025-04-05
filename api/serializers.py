@@ -42,10 +42,26 @@ class SignupSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        # Buxgalterga tegishli ma'lumotlarni alohida ajratamiz
+        accountant_fields = ['experience', 'specialty', 'address', 'skills', 'languages', 'bio']
+        accountant_data = {field: validated_data.pop(field, None) for field in accountant_fields}
+
+        # User obyektini yaratamiz
         user = User.objects.create_user(**validated_data)
+
+        # Agar role buxgalter bo'lsa, Accountant obyektini yaratamiz
         if user.role == 'buxgalter':
-            # Accountant obyektini yaratish
-            Accountant.objects.create(user=user, certifications=self.context['request'].data.get('certifications', ''))
+            Accountant.objects.create(
+                user=user,
+                certifications=self.context['request'].data.get('certifications', ''),
+                fee=self.context['request'].data.get('fee', 0),  # fee ni so'rovdan olamiz
+                experience=accountant_data['experience'],
+                specialty=accountant_data['specialty'],
+                address=accountant_data['address'],
+                skills=accountant_data['skills'],
+                languages=accountant_data['languages'],
+                bio=accountant_data['bio']
+            )
         return user
 
 
@@ -69,16 +85,13 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'full_name', 'email', 'phone_number', 'role',
-                  'company_name', 'stir', 'experience', 'specialty','img']
-
+                  'company_name', 'stir', 'img']  # experience va specialty olib tashlandi
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['full_name', 'phone_number', 'company_name', 'stir', 'experience', 'specialty','img']
+        fields = ['full_name', 'phone_number', 'company_name', 'stir', 'img']  # experience va specialty olib tashlandi
         extra_kwargs = {
-            'experience': {'required': False},
-            'specialty': {'required': False},
             'company_name': {'required': False},
             'stir': {'required': False},
             'img': {'required': False},
@@ -125,23 +138,22 @@ class ReportTypeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AccountantSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)  # UserSerializer bilan bog'lash
+    user = UserSerializer(read_only=True)
     user_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
         write_only=True,
         source='user'
     )
-    fee = serializers.DecimalField(max_digits=10, decimal_places=2)  # fee - buxgalterning narxi
+    fee = serializers.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
         model = Accountant
-        fields = ['id', 'user', 'user_id', 'certifications', 'fee']
+        fields = ['id', 'user', 'user_id', 'certifications', 'fee',
+                  'experience', 'specialty', 'address', 'skills', 'languages', 'bio']
 
     def validate_user_id(self, value):
-        # Check if the user already has an associated Accountant
         if Accountant.objects.filter(user=value).exists():
             raise serializers.ValidationError("Bu foydalanuvchi allaqachon buxgalter sifatida ro'yxatdan o'tgan.")
-        # Check if the user's role is 'buxgalter'
         if value.role != 'buxgalter':
             raise serializers.ValidationError("Faqat 'buxgalter' roli bo'lgan foydalanuvchilar Accountant sifatida qo'shilishi mumkin.")
         return value
