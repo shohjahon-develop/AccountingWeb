@@ -42,7 +42,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     languages = models.CharField(max_length=255, blank=True, null=True)  # Yangi: tillar
     bio = models.TextField(blank=True, null=True)  # Yangi: o'zi haqida
 
-    # Foydalanuvchi roli
+
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='mijoz')
 
     is_active = models.BooleanField(default=True)
