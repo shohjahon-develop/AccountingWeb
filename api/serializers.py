@@ -10,12 +10,23 @@ from api.models import *
 User = get_user_model()
 
 class SignupSerializer(serializers.ModelSerializer):
+    # Buxgalter uchun qo‘shimcha maydonlarni alohida qo‘shish
+    experience = serializers.IntegerField(required=False, allow_null=True)
+    specialty = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True)
+    address = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
+    skills = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    languages = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
+    bio = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    certifications = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    fee = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
+
     class Meta:
         model = User
         fields = [
             'full_name', 'email', 'phone_number', 'password', 'role',
-            'company_name', 'stir', 'experience', 'specialty', 'address',
-            'skills', 'languages', 'bio'
+            'company_name', 'stir',  # Mijoz uchun
+            'experience', 'specialty', 'address', 'skills', 'languages', 'bio',  # Buxgalter uchun
+            'certifications', 'fee'  # Accountant modelidan
         ]
         extra_kwargs = {'password': {'write_only': True}}
 
@@ -28,7 +39,7 @@ class SignupSerializer(serializers.ModelSerializer):
                 if not data.get(field):
                     raise serializers.ValidationError({field: f"{field} mijoz uchun majburiy."})
             # Buxgalter maydonlarini olib tashlash
-            for field in ['experience', 'specialty', 'address', 'skills', 'languages', 'bio']:
+            for field in ['experience', 'specialty', 'address', 'skills', 'languages', 'bio', 'certifications', 'fee']:
                 data.pop(field, None)
         elif role == 'buxgalter':
             # Buxgalter uchun faqat kerakli maydonlar
@@ -43,7 +54,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Buxgalterga tegishli ma'lumotlarni alohida ajratamiz
-        accountant_fields = ['experience', 'specialty', 'address', 'skills', 'languages', 'bio']
+        accountant_fields = ['experience', 'specialty', 'address', 'skills', 'languages', 'bio', 'certifications', 'fee']
         accountant_data = {field: validated_data.pop(field, None) for field in accountant_fields}
 
         # User obyektini yaratamiz
@@ -53,8 +64,8 @@ class SignupSerializer(serializers.ModelSerializer):
         if user.role == 'buxgalter':
             Accountant.objects.create(
                 user=user,
-                certifications=self.context['request'].data.get('certifications', ''),
-                fee=self.context['request'].data.get('fee', 0),  # fee ni so'rovdan olamiz
+                certifications=accountant_data['certifications'],
+                fee=accountant_data['fee'],
                 experience=accountant_data['experience'],
                 specialty=accountant_data['specialty'],
                 address=accountant_data['address'],
@@ -64,39 +75,32 @@ class SignupSerializer(serializers.ModelSerializer):
             )
         return user
 
-
+# Qolgan serializerlar o‘zgarmaydi
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-
-        # Add custom claims
         token['role'] = user.role
-
         return token
 
 class LoginResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
     tokens = CustomTokenObtainPairSerializer()
 
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'full_name', 'email', 'phone_number', 'role',
-                  'company_name', 'stir', 'img']  # experience va specialty olib tashlandi
+        fields = ['id', 'full_name', 'email', 'phone_number', 'role', 'company_name', 'stir', 'img']
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['full_name', 'phone_number', 'company_name', 'stir', 'img']  # experience va specialty olib tashlandi
+        fields = ['full_name', 'phone_number', 'company_name', 'stir', 'img']
         extra_kwargs = {
             'company_name': {'required': False},
             'stir': {'required': False},
             'img': {'required': False},
         }
-
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -106,13 +110,11 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError("Bunday email ro'yxatdan o'tmagan.")
         return value
 
-
 class AboutUsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AboutUs
         fields = ['id', 'img', 'title', 'text']
 
-# 2️⃣ Kodni tekshirish
 class PasswordResetConfirmSerializer(serializers.Serializer):
     uidb64 = serializers.CharField()
     token = serializers.CharField()
@@ -130,7 +132,6 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
-
 
 class ReportTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -159,16 +160,14 @@ class AccountantSerializer(serializers.ModelSerializer):
         return value
 
 class ReportSerializer(serializers.ModelSerializer):
-    report_types = ReportTypeSerializer(many=True, read_only=True)  # O'zgartirildi
-    accountant = AccountantSerializer(read_only=True)  # O'zgartirildi
+    report_types = ReportTypeSerializer(many=True, read_only=True)
+    accountant = AccountantSerializer(read_only=True)
     client = UserSerializer(read_only=True)
 
     class Meta:
         model = Report
         fields = ['id', 'client', 'accountant', 'report_types', 'status', 'total_price', 'created_at']
         extra_kwargs = {'status': {'write_only': True}}
-
-
 
 class ReportCommentSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.full_name', read_only=True)
@@ -178,27 +177,32 @@ class ReportCommentSerializer(serializers.ModelSerializer):
         fields = ['id', 'report', 'author', 'author_name', 'comment', 'created_at']
         read_only_fields = ['author', 'created_at']
 
-
-
-
 class MessageSerializer(serializers.ModelSerializer):
-    sender_name = serializers.CharField(source='sender.full_name', read_only=True)
-    recipient_name = serializers.CharField(source='recipient.full_name', read_only=True)
+    from_user = serializers.SerializerMethodField()  # "from" uchun
+    to_user = serializers.SerializerMethodField()    # "to" uchun
 
     class Meta:
         model = Message
-        fields = ['id', 'sender', 'sender_name', 'recipient', 'recipient_name', 'message', 'created_at']
-        read_only_fields = ['sender', 'created_at']
+        fields = ['id', 'from_user', 'to_user', 'message', 'created_at']
+        read_only_fields = ['id', 'created_at']
 
+    def get_from_user(self, obj):
+        return {
+            "id": obj.sender.id,
+            "role": obj.sender.role,
+            "name": obj.sender.full_name
+        }
 
-
+    def get_to_user(self, obj):
+        return {
+            "id": obj.recipient.id,
+            "role": obj.recipient.role,
+            "name": obj.recipient.full_name
+        }
 class PaymentCardSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentCard
         fields = '__all__'
-
-
-
 
 class PasswordChangeSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True, min_length=6)
@@ -209,7 +213,6 @@ class PasswordChangeSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError("Joriy parol noto‘g‘ri.")
         return value
-
 
 
 

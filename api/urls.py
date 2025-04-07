@@ -12,6 +12,8 @@ router.register(r'messages', MessageViewSet)
 router.register(r'payment-cards', PaymentCardViewSet)
 router.register(r'admin-users', UserAdminViewSet, basename='admin-users')
 router.register(r'aboutus', AboutUsViewSet, basename='aboutus')
+router.register(r'chats', ChatViewSet, basename='chats')
+router.register(r'admin-chats', AdminChatViewSet, basename='admin-chats')
 
 urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),

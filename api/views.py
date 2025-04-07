@@ -8,7 +8,7 @@ from rest_framework import generics, status, viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 
 
@@ -270,6 +270,44 @@ class ReportCommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 
+class ChatViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = MessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Swagger generatsiyasi paytida xatodan qochish uchun
+        if getattr(self, 'swagger_fake_view', False):
+            return Message.objects.none()  # Bo‘sh queryset qaytaradi
+
+        user = self.request.user
+        # Agar foydalanuvchi autentifikatsiya qilinmagan bo‘lsa, bo‘sh queryset qaytarish
+        if not user.is_authenticated:
+            return Message.objects.none()
+
+        # Faqat foydalanuvchiga tegishli xabarlar (yuborilgan yoki qabul qilingan)
+        return Message.objects.filter(sender=user) | Message.objects.filter(recipient=user)
+
+# Admin uchun barcha chatlarni ko‘rish (GET /admin-chats)
+class AdminChatViewSet(viewsets.ModelViewSet):
+    serializer_class = MessageSerializer
+    permission_classes = [IsAdminUser]  # Faqat admin uchun
+    queryset = Message.objects.all()    # Barcha xabarlar
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    # Admin chat xabarini o‘chirish (DELETE /admin-chats/:id)
+    def destroy(self, request, *args, **kwargs):
+        try:
+            message = self.get_object()
+            message.delete()
+            return Response({"message": "Chat xabari o‘chirildi"}, status=status.HTTP_200_OK)
+        except Message.DoesNotExist:
+            return Response({"error": "Xabar topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+# Eski MessageViewSet ni saqlab qolish mumkin, lekin yangi endpointlar bilan almashtiriladi
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
@@ -277,8 +315,7 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if not self.request.user.is_authenticated:
-            return Message.objects.none()  # Agar foydalanuvchi autentifikatsiya qilinmagan bo‘lsa, bo‘sh queryset qaytarish
-
+            return Message.objects.none()
         return Message.objects.filter(recipient=self.request.user) | Message.objects.filter(sender=self.request.user)
 
     def perform_create(self, serializer):
