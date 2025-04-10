@@ -38,8 +38,8 @@ urlpatterns = [
     path('auth/password-reset-confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
 
     # API endpointlar
-    path('api/', include(router.urls)),
-    path('api/', include(reports_router.urls)), # Nested routerlarni qo'shish
+    path('', include(router.urls)),
+    path('admin/', include(reports_router.urls)), # Nested routerlarni qo'shish
 ]
 
 # Eslatma: TZ dagi /api/client/, /api/accountant/, /api/admin/ prefikslari o'rniga

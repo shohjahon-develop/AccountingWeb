@@ -424,6 +424,7 @@ class ReportSerializer(serializers.ModelSerializer):
 
 
 # Task uchun serializer
+
 class TaskSerializer(serializers.ModelSerializer):
     accountant = MiniUserSerializer(read_only=True)
     client = MiniUserSerializer(read_only=True, allow_null=True)

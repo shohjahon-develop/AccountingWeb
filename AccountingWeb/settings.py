@@ -91,8 +91,8 @@ CORS_ALLOW_HEADERS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    # "https://yourfrontend.com"
+    "http://localhost:8000",
+    # "https://yourfrontend.com" 5173
 ]
 
 
