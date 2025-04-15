@@ -30,7 +30,7 @@ from .permissions import (
 
 User = get_user_model()
 
-# --- Mavjud Viewlar (Signup, Login, Profile, PasswordChange, PasswordReset, AboutUs) ---
+
 
 class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -79,9 +79,9 @@ class LoginView(TokenObtainPairView):
 
 # UserViewSet ni admin uchun qoldiramiz, lekin UserAdminViewSet ham bor
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = User.objects.all().order_by('full_name') # Tartiblash
-    serializer_class = UserSerializer # Endi UserSerializer Accountant profilini ham ko'rsatadi
-    permission_classes = [IsAdminUser] # Faqat admin
+    queryset = User.objects.all().order_by('full_name')
+    serializer_class = UserSerializer
+    permission_classes = [IsAdminUser]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -144,7 +144,7 @@ class AboutUsViewSet(viewsets.ModelViewSet):
             return [AllowAny()]
         return [IsAdminUser()] # Faqat admin o'zgartira oladi
 
-# Parolni qayta tiklash
+
 class PasswordResetRequestView(generics.GenericAPIView):
     serializer_class = PasswordResetRequestSerializer
     permission_classes = [AllowAny] # Hamma uchun ochiq
@@ -194,7 +194,7 @@ class PasswordResetConfirmView(generics.GenericAPIView):
         return Response({"detail": "Parol muvaffaqiyatli o‘zgartirildi."}, status=status.HTTP_200_OK)
 
 
-# --- Yangi va Yangilangan ViewSetlar ---
+
 
 class ReportTypeViewSet(viewsets.ModelViewSet):
     """
@@ -232,22 +232,17 @@ class ReportViewSet(viewsets.ModelViewSet):
                            .prefetch_related('comments', 'attachments', 'tasks')\
                            .all().order_by('-created_at')
     serializer_class = ReportSerializer
-    permission_classes = [IsAuthenticated, CanManageReport] # Asosiy ruxsatnoma
-    parser_classes = [MultiPartParser, FormParser] # Fayl yuklash uchun (garchi attachment alohida bo'lsa ham)
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
-    # Filterlash uchun backend (django-filter kerak bo'ladi yoki o'zimiz yozamiz)
-    # filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
-    # filterset_fields = ['status', 'client__id', 'accountant__id', 'category__id']
-    # ordering_fields = ['created_at', 'submitted_at', 'updated_at']
-    # search_fields = ['title', 'description', 'client__full_name', 'accountant__full_name']
+
 
     def get_queryset(self):
         # --- Swagger schema generation uchun tekshiruv ---
         if getattr(self, 'swagger_fake_view', False):
-            return Report.objects.none() # Bo'sh queryset qaytarish
+            return Report.objects.none()
 
         user = self.request.user
-        # --- Autentifikatsiya tekshiruvi ---
         if not user.is_authenticated:
             return Report.objects.none()
 
@@ -259,9 +254,9 @@ class ReportViewSet(viewsets.ModelViewSet):
         elif user.role == 'buxgalter':
             queryset = queryset.filter(accountant=user)
         elif user.role == 'admin':
-            pass # Admin hamma narsani ko'ra oladi
+            pass
 
-        # ... (Qolgan filterlash logikasi o'zgarishsiz) ...
+
 
         return queryset
 

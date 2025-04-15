@@ -333,7 +333,7 @@ class ReportCommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ReportComment
-        fields = ['id', 'author', 'user_type', 'comment', 'created_at'] # 'report' olib tashlandi
+        fields = ['id', 'author', 'user_type', 'comment', 'created_at']
         # 'report' endi read_only emas
         read_only_fields = ['id', 'author', 'user_type', 'created_at']
         # extra_kwargs dan 'report' ni olib tashlaymiz
