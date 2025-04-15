@@ -64,7 +64,6 @@ class SignupSerializer(serializers.ModelSerializer):
             for field in ['company_name', 'stir']:
                 data.pop(field, None)
         elif role == 'admin':
-             # Admin uchun qo'shimcha majburiy maydonlar yo'q (hozircha)
              for field in ['company_name', 'stir', 'experience', 'specialty', 'address', 'skills', 'languages', 'bio', 'certifications', 'fee']:
                 data.pop(field, None)
         else:
